@@ -32,7 +32,7 @@ export default function ProveHuman() {
     scope: "prove-human-demo",
     endpoint: process.env.NODE_ENV === 'production'
       ? "https://your-production-url.com/api/verify"
-      : "https://cba3-2a01-4b00-8472-fb00-5d21-aba6-c36d-9542.ngrok-free.app/api/verify", // Replace with your ngrok URL
+      : "https://f647-2-245-140-245.ngrok-free.app/api/verify", // Replace with your ngrok URL, don't forget to add /api/verify to the end of your ngrok URL
     endpointType: "https",
     userId,
     userIdType: "uuid",
@@ -128,8 +128,7 @@ export default function ProveHuman() {
               <ol className="text-left text-blue-800 space-y-2">
                 <li className="flex items-start">
                   <span className="bg-blue-200 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 mt-0.5">1</span>
-                  Download the Self app on your mobile device
-                </li>
+                  <a href="https://apps.apple.com/app/self/id6448697253" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">Download</a>&nbsp;the Self app on your mobile device                </li>
                 <li className="flex items-start">
                   <span className="bg-blue-200 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 mt-0.5">2</span>
                   Scan your passport with the Self app

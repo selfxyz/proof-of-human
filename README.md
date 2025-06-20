@@ -10,48 +10,73 @@ A simple, no-blockchain template for demonstrating Self protocol passport verifi
 - **Perfect for demos** - works with mock passports
 
 ## ⚡ Quick Start (5 minutes)
+---
 
-### 1. Clone and Install
+## Quickstart
+
+Set up and run the demo in development mode using mock passports. This process involves launching the backend server, exposing it via ngrok, and configuring the frontend accordingly.
+
+### 1. Set Up the Backend
+
+From the project root, navigate to the `backend` directory and install dependencies:
+
 ```bash
-git clone <this-repo>
-cd prove-human
-
-# Install frontend
-cd frontend && yarn install
-
-# Install backend
-cd ../backend && yarn install
+cd backend
+yarn install
 ```
 
-### 2. Start Both Services
-```bash
-# Terminal 1: Start backend
-cd backend && yarn dev
-# Backend runs on http://localhost:3001
+Then, start the backend server:
 
-# Terminal 2: Start frontend
-cd frontend && yarn dev
-# Frontend runs on http://localhost:3000
+```bash
+yarn dev
 ```
 
-### 3. Set Up ngrok (Required for Self)
+The backend will run locally at `http://localhost:3001`.
+
+Now, expose the backend to the public internet using [ngrok](https://ngrok.com):
+
 ```bash
-# Terminal 3: Create HTTPS tunnel
 ngrok http 3001
-# Copy the HTTPS URL (e.g., https://abc123.ngrok.app)
 ```
 
-### 4. Update Frontend Configuration
-Edit `frontend/app/page.tsx` and replace the ngrok URL:
-```javascript
-endpoint: "https://your-ngrok-url.ngrok.app/api/verify"
+Copy the HTTPS URL from the terminal output (e.g., `https://abc123.ngrok.app`).
+
+> **Important:** This URL will be used in the frontend configuration and must include the `/api/verify` path when specified.
+
+### 2. Set Up the Frontend
+
+Open a new terminal, navigate to the `frontend` directory, and install dependencies:
+
+```bash
+cd frontend
+yarn install
 ```
 
-### 5. Test It!
-1. Open http://localhost:3000
-2. Scan QR code with Self mobile app
-3. Complete passport verification
-4. See "✅ Verified Human!" message
+In `frontend/app/page.tsx`, update the `endpoint` value to include your ngrok URL **with** the `/api/verify` path:
+
+```ts
+endpoint: "https://abc123.ngrok.app/api/verify"
+```
+
+Now, start the frontend application:
+
+```bash
+yarn dev
+```
+
+The frontend will be available at `http://localhost:3000`.
+
+### 3. Verify the Flow
+
+1. Open `http://localhost:3000` in your browser
+2. Use the Self mobile app to scan the displayed QR code
+3. Complete the passport verification flow (mock or real) - mock is set per default, so see below how to change it to real passport
+4. You should see a confirmation message indicating successful verification
+
+---
+
+Let me know if you'd like this integrated into the full README or converted to Docusaurus/GitBook syntax.
+
 
 ## 📱 Self Mobile App Setup
 
@@ -64,7 +89,17 @@ endpoint: "https://your-ngrok-url.ngrok.app/api/verify"
 ### For Production (Real Passports)
 1. Scan your real passport with Self app
 2. Update backend to use production mode
-3. Change `mockPassport: true` to `false` in backend
+3. In `backend/index.tsChange` you need to set the use of the mockPassport to false in the `selfBackendVerifier`
+
+```typescript
+ const selfBackendVerifier = new SelfBackendVerifier(
+      'prove-human-demo', // Same scope as frontend
+      verifyEndpoint,      // The endpoint Self backend will call
+      'uuid',              // User ID type
+      true                 //  set to false to test with your real passport
+    );
+    
+```
 
 ## 🏗️ Architecture
 
