@@ -9,6 +9,8 @@ import { useRegistrationStatus } from './hooks/useRegistrationStatus';
 import { RegistrationFlow } from './components/RegistrationFlow';
 import { useVerificationEvents } from './hooks/useVerificationEvents';
 import { useVerificationDetails } from './hooks/useProofOfHuman';
+import { Settings } from './components/Settings';
+import { useSettings } from './hooks/useSettings';
 
 export default function ProveHuman() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -16,10 +18,12 @@ export default function ProveHuman() {
   const [verificationData, setVerificationData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [isWaitingForVerification, setIsWaitingForVerification] = useState(false);
   const { address, isConnected } = useAccount();
   const { isRegistered, isLoading: isCheckingRegistration } = useRegistrationStatus();
   const { data: verificationDetails } = useVerificationDetails();
+  const { settings } = useSettings();
 
   useEffect(() => {
     // Generate a unique user ID when component mounts
@@ -77,6 +81,7 @@ export default function ProveHuman() {
       minimumAge: 18,
       ofac: true,
     },
+    mockPassport: settings.useMockPassport,
     devMode: true,
   }).build() : null;
 
@@ -113,6 +118,16 @@ export default function ProveHuman() {
               <p className="text-gray-600 mt-1">Verify your identity with Self protocol</p>
             </div>
             <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setShowSettings(true)}
+                className="text-gray-600 hover:text-gray-800"
+                title="Settings"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
               <WalletConnection />
               <a
                 href="https://self.xyz"
@@ -258,8 +273,15 @@ export default function ProveHuman() {
               </ol>
             </div>
 
-            <div className="mt-6 text-xs text-gray-400">
-              User ID: {userId.substring(0, 8)}...
+            <div className="mt-6 space-y-2">
+              <div className="text-xs text-gray-400">
+                User ID: {userId.substring(0, 8)}...
+              </div>
+              <div className="text-xs text-gray-500">
+                Mode: <span className={settings.useMockPassport ? "text-blue-600" : "text-green-600"}>
+                  {settings.useMockPassport ? "Mock Passport" : "Real Passport"}
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -366,6 +388,12 @@ export default function ProveHuman() {
           }}
         />
       )}
+
+      {/* Settings Modal */}
+      <Settings 
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
     </div>
   );
 }

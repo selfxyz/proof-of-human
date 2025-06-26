@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import SelfQRcodeWrapper, { SelfAppBuilder } from '@selfxyz/qrcode';
 import { useAccount } from 'wagmi';
 import { useRegistrationStatus } from '../hooks/useRegistrationStatus';
+import { useSettings } from '../hooks/useSettings';
 
 interface RegistrationFlowProps {
   onClose: () => void;
@@ -13,6 +14,7 @@ interface RegistrationFlowProps {
 export function RegistrationFlow({ onClose, onSuccess }: RegistrationFlowProps) {
   const { address } = useAccount();
   const { markAsRegistered } = useRegistrationStatus();
+  const { settings } = useSettings();
   const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
 
@@ -34,6 +36,7 @@ export function RegistrationFlow({ onClose, onSuccess }: RegistrationFlowProps) 
       // For registration, we only need minimal disclosure
       issuing_state: true,
     },
+    mockPassport: settings.useMockPassport,
     devMode: true,
   }).build();
 
