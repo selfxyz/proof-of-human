@@ -7,6 +7,8 @@ import { useAccount } from 'wagmi';
 import { WalletConnection } from './components/WalletConnection';
 import { useRegistrationStatus } from './hooks/useRegistrationStatus';
 import { RegistrationFlow } from './components/RegistrationFlow';
+import { useVerificationEvents } from './hooks/useVerificationEvents';
+import { useVerificationDetails } from './hooks/useProofOfHuman';
 
 export default function ProveHuman() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -14,13 +16,38 @@ export default function ProveHuman() {
   const [verificationData, setVerificationData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
+  const [isWaitingForVerification, setIsWaitingForVerification] = useState(false);
   const { address, isConnected } = useAccount();
   const { isRegistered, isLoading: isCheckingRegistration } = useRegistrationStatus();
+  const { data: verificationDetails } = useVerificationDetails();
 
   useEffect(() => {
     // Generate a unique user ID when component mounts
     setUserId(uuidv4());
   }, []);
+
+  // Check if already verified on-chain
+  useEffect(() => {
+    if (verificationDetails && verificationDetails.isVerified) {
+      setIsVerified(true);
+      setVerificationData({
+        nationality: verificationDetails.nationality,
+        timestamp: verificationDetails.timestamp,
+      });
+    }
+  }, [verificationDetails]);
+
+  // Monitor for verification events
+  useVerificationEvents((user, timestamp, nationality) => {
+    if (user.toLowerCase() === address?.toLowerCase()) {
+      setIsVerified(true);
+      setIsWaitingForVerification(false);
+      setVerificationData({
+        nationality,
+        timestamp,
+      });
+    }
+  });
 
   if (!userId) {
     return (
@@ -54,9 +81,10 @@ export default function ProveHuman() {
   }).build() : null;
 
   const handleSuccess = async (data?: any) => {
-    console.log('Verification successful!', data);
-    setIsVerified(true);
-    setVerificationData(data);
+    console.log('Verification initiated!', data);
+    // For on-chain verification, we don't get immediate results
+    // We need to wait for the on-chain transaction
+    setIsWaitingForVerification(true);
     setError(null);
   };
 
@@ -64,6 +92,7 @@ export default function ProveHuman() {
     console.error('Verification failed:', error);
     setError(error?.message || 'Verification failed');
     setIsVerified(false);
+    setIsWaitingForVerification(false);
   };
 
   const resetVerification = () => {
@@ -150,7 +179,31 @@ export default function ProveHuman() {
           </div>
         )}
 
-        {!isVerified && !error && isConnected && isRegistered && (
+        {/* Waiting for Verification */}
+        {isWaitingForVerification && !isVerified && !error && (
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="mb-8">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-yellow-600 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                Verifying On-Chain...
+              </h2>
+              <p className="text-lg text-gray-600 mb-6">
+                Your proof is being verified on the blockchain. This may take a few moments.
+              </p>
+              <div className="bg-yellow-50 rounded-lg p-4">
+                <p className="text-sm text-yellow-800">
+                  Waiting for transaction confirmation on Celo Alfajores
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!isVerified && !error && !isWaitingForVerification && isConnected && isRegistered && (
           <div className="bg-white rounded-xl shadow-lg p-8 text-center">
             <div className="mb-8">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -231,14 +284,24 @@ export default function ProveHuman() {
             {/* Verification Details */}
             {verificationData && (
               <div className="bg-green-50 rounded-lg p-6 mb-6">
-                <h3 className="font-semibold text-green-900 mb-3">Verification Details:</h3>
+                <h3 className="font-semibold text-green-900 mb-3">On-Chain Verification Details:</h3>
                 <div className="text-left text-green-800 space-y-2">
-                  <p><strong>Status:</strong> Verified ✓</p>
-                  <p><strong>Verified At:</strong> {new Date().toLocaleString()}</p>
-                  <p><strong>User ID:</strong> {userId.substring(0, 8)}...</p>
+                  <p><strong>Status:</strong> Verified On-Chain ✓</p>
+                  <p><strong>Verified At:</strong> {verificationData.timestamp ? new Date(Number(verificationData.timestamp) * 1000).toLocaleString() : 'Just now'}</p>
+                  <p><strong>Wallet:</strong> {address?.substring(0, 6)}...{address?.substring(address.length - 4)}</p>
                   {verificationData.nationality && (
                     <p><strong>Nationality:</strong> {verificationData.nationality}</p>
                   )}
+                  <p><strong>Contract:</strong> 
+                    <a 
+                      href={`https://alfajores.celoscan.io/address/${process.env.NEXT_PUBLIC_PROOF_OF_HUMAN_CONTRACT}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 text-green-600 hover:text-green-800 underline"
+                    >
+                      View on Celoscan
+                    </a>
+                  </p>
                 </div>
               </div>
             )}
