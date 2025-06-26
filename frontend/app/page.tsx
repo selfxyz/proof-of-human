@@ -6,12 +6,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAccount } from 'wagmi';
 import { WalletConnection } from './components/WalletConnection';
 import { useRegistrationStatus } from './hooks/useRegistrationStatus';
+import { RegistrationFlow } from './components/RegistrationFlow';
 
 export default function ProveHuman() {
   const [userId, setUserId] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState(false);
   const [verificationData, setVerificationData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showRegistration, setShowRegistration] = useState(false);
   const { address, isConnected } = useAccount();
   const { isRegistered, isLoading: isCheckingRegistration } = useRegistrationStatus();
 
@@ -31,24 +33,25 @@ export default function ProveHuman() {
     );
   }
 
-  // Create the SelfApp configuration
-  const selfApp = new SelfAppBuilder({
-    appName: "Prove You're Human",
-    scope: "prove-human-demo",
-    endpoint: process.env.NODE_ENV === 'production'
-      ? "https://your-production-url.com/api/verify"
-      : "https://f647-2-245-140-245.ngrok-free.app/api/verify", // Replace with your ngrok URL, don't forget to add /api/verify to the end of your ngrok URL
-    endpointType: "https",
-    userId,
-    userIdType: "uuid",
+  // Create the SelfApp configuration for verification
+  const selfApp = isConnected && isRegistered && address ? new SelfAppBuilder({
+    appName: "Prove You're Human - Verification",
+    scope: "proof-of-human-verification",
+    endpoint: process.env.NEXT_PUBLIC_PROOF_OF_HUMAN_CONTRACT!,
+    endpointType: "staging_celo", // For Alfajores testnet
+    userId: address,
+    userIdType: "hex",
+    version: 2,
+    userDefinedData: "0x" + Buffer.from("verification").toString('hex').padEnd(128, '0'),
     disclosures: {
       issuing_state: true,
       name: true,
       nationality: true,
+      minimumAge: 18,
+      ofac: true,
     },
     devMode: true,
-    header: "ngrok-skip-browser-warning: true",
-  }).build();
+  }).build() : null;
 
   const handleSuccess = async (data?: any) => {
     console.log('Verification successful!', data);
@@ -136,7 +139,7 @@ export default function ProveHuman() {
               </p>
               <button
                 className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
-                onClick={() => alert('Registration flow will be implemented in Phase 3')}
+                onClick={() => setShowRegistration(true)}
               >
                 Register Identity
               </button>
@@ -169,12 +172,18 @@ export default function ProveHuman() {
             {/* QR Code */}
             <div className="flex justify-center mb-8">
               <div className="p-6 bg-gray-50 rounded-xl">
-                <SelfQRcodeWrapper
-                  selfApp={selfApp}
-                  onSuccess={handleSuccess}
-                  onError={handleError}
-                  size={280}
-                />
+                {selfApp ? (
+                  <SelfQRcodeWrapper
+                    selfApp={selfApp}
+                    onSuccess={handleSuccess}
+                    onError={handleError}
+                    size={280}
+                  />
+                ) : (
+                  <div className="w-[280px] h-[280px] flex items-center justify-center">
+                    <p className="text-gray-500">Loading...</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -282,6 +291,18 @@ export default function ProveHuman() {
           <p className="text-sm mt-2">Secure, private, decentralized identity verification</p>
         </div>
       </footer>
+
+      {/* Registration Modal */}
+      {showRegistration && (
+        <RegistrationFlow
+          onClose={() => setShowRegistration(false)}
+          onSuccess={() => {
+            setShowRegistration(false);
+            // Refresh the page to show verification QR
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }
