@@ -1,38 +1,27 @@
 'use client';
 
 import { useAccount } from 'wagmi';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useIsVerifiedHuman } from './useProofOfHuman';
 
 const STORAGE_KEY_PREFIX = 'self_registered_';
 
 export function useRegistrationStatus() {
   const { address } = useAccount();
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: isVerifiedOnChain, isLoading: isCheckingOnChain } = useIsVerifiedHuman();
 
-  useEffect(() => {
-    if (!address) {
-      setIsRegistered(false);
-      setIsLoading(false);
-      return;
-    }
-
-    // Check localStorage for registration status
+  // Check localStorage as fallback for UI state
+  const getLocalStatus = () => {
+    if (!address) return false;
     const storageKey = `${STORAGE_KEY_PREFIX}${address.toLowerCase()}`;
-    const registered = localStorage.getItem(storageKey) === 'true';
-    
-    setIsRegistered(registered);
-    setIsLoading(false);
-
-    // TODO: In Phase 2, we'll also check on-chain status here
-  }, [address]);
+    return localStorage.getItem(storageKey) === 'true';
+  };
 
   const markAsRegistered = () => {
     if (!address) return;
     
     const storageKey = `${STORAGE_KEY_PREFIX}${address.toLowerCase()}`;
     localStorage.setItem(storageKey, 'true');
-    setIsRegistered(true);
   };
 
   const clearRegistration = () => {
@@ -40,12 +29,18 @@ export function useRegistrationStatus() {
     
     const storageKey = `${STORAGE_KEY_PREFIX}${address.toLowerCase()}`;
     localStorage.removeItem(storageKey);
-    setIsRegistered(false);
   };
 
+  // Sync on-chain status with localStorage
+  useEffect(() => {
+    if (isVerifiedOnChain && address) {
+      markAsRegistered();
+    }
+  }, [isVerifiedOnChain, address]);
+
   return {
-    isRegistered,
-    isLoading,
+    isRegistered: isVerifiedOnChain || getLocalStatus(),
+    isLoading: isCheckingOnChain,
     markAsRegistered,
     clearRegistration,
   };

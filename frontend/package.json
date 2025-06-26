@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.2.8",
+    "@selfxyz/contracts": "^1.0.7",
     "@selfxyz/qrcode": "^0.0.19",
     "@tanstack/react-query": "^5.81.2",
     "autoprefixer": "^10.4.21",
