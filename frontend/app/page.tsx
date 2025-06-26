@@ -3,12 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import SelfQRcodeWrapper, { SelfAppBuilder } from '@selfxyz/qrcode';
 import { v4 as uuidv4 } from 'uuid';
+import { useAccount } from 'wagmi';
+import { WalletConnection } from './components/WalletConnection';
+import { useRegistrationStatus } from './hooks/useRegistrationStatus';
 
 export default function ProveHuman() {
   const [userId, setUserId] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState(false);
   const [verificationData, setVerificationData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const { address, isConnected } = useAccount();
+  const { isRegistered, isLoading: isCheckingRegistration } = useRegistrationStatus();
 
   useEffect(() => {
     // Generate a unique user ID when component mounts
@@ -76,6 +81,7 @@ export default function ProveHuman() {
               <p className="text-gray-600 mt-1">Verify your identity with Self protocol</p>
             </div>
             <div className="flex items-center space-x-4">
+              <WalletConnection />
               <a
                 href="https://self.xyz"
                 target="_blank"
@@ -91,7 +97,57 @@ export default function ProveHuman() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-12">
-        {!isVerified && !error && (
+        {/* Wallet Connection Required */}
+        {!isConnected && (
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="mb-8">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                Connect Your Wallet
+              </h2>
+              <p className="text-lg text-gray-600 mb-6">
+                Please connect your wallet to use on-chain verification
+              </p>
+              <div className="flex justify-center">
+                <WalletConnection />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Registration Required */}
+        {isConnected && !isRegistered && !isCheckingRegistration && (
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="mb-8">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                Register Your Identity
+              </h2>
+              <p className="text-lg text-gray-600 mb-6">
+                You need to register your identity on-chain before verification
+              </p>
+              <button
+                className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+                onClick={() => alert('Registration flow will be implemented in Phase 3')}
+              >
+                Register Identity
+              </button>
+              <p className="text-sm text-gray-500 mt-4">
+                This is a one-time process that stores your identity commitment on-chain
+              </p>
+            </div>
+          </div>
+        )}
+
+        {!isVerified && !error && isConnected && isRegistered && (
           <div className="bg-white rounded-xl shadow-lg p-8 text-center">
             <div className="mb-8">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
