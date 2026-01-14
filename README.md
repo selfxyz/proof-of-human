@@ -2,4 +2,4 @@
 
 Please use the workshop repository instead:
 
-https://github.com/selfxyz/workshop
+https://github.com/selfxyz/self-integration-boilerplate
